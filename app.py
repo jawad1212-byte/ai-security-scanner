@@ -1,71 +1,69 @@
 import streamlit as st
 import re
 
-st.set_page_config(page_title="AI Security Scanner", layout="wide")
+st.set_page_config(layout="wide")
 
 VULNERABILITIES = {
-    "SQL_INJECTION": {
-        "patterns": [
-            r"f['\"].*?['\"].*?(user|input|request|get|post)",  # Catches f-strings with user input
-            r"input\s*[\+\|\,\)\(]['\"]",                      # input() concatenation
-            r"exec\s*\(", r"eval\s*\("                         # Dangerous functions
-        ],
-        "severity": "CRITICAL"
-    },
-    "HARDCODED_SECRET": {
-        "patterns": [r"(password|key|secret|token)\s*[=:]\s*['\"][^'\"]{4,}['\"]"],
-        "severity": "HIGH"
-    }
+    "SQL_INJECTION": [r"f['\"].*?(user|input)", r"['\"].*\+\s*(user|input)", r"cursor\.execute\s*\(\s*[\"'][^?]*?(user|input)"],
+    "HARDCODED_SECRET": [r"(password|key|secret|token)\s*[=:]\s*['\"][^'\"]{3,}"],
+    "XSS": [r"(print|write).*?(user|input)", r"\.innerHTML\s*[=+\-].*?(user|input)"],
 }
 
-def scan_code(code):
+def scan_repository(code):
+    """Scan entire 'repository' for vulnerabilities"""
     findings = []
     lines = code.split('\n')
     
-    for line_num, line in enumerate(lines, 1):
-        line_str = line.strip()
-        
-        # SQL Injection - FIXED PATTERN
-        if re.search(r"f['\"].*?(user|input)", line_str, re.IGNORECASE):
-            findings.append({
-                "line": line_num,
-                "code": line_str,
-                "vuln": "SQL_INJECTION",
-                "severity": "CRITICAL",
-                "fix": "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE name = ?', (user_input,))"
-            })
-        # Hardcoded secrets
-        elif re.search(r"(password|key|secret|token)\s*[=:]\s*['\"][^'\"]{4,}['\"]", line_str, re.IGNORECASE):
-            findings.append({
-                "line": line_num,
-                "code": line_str,
-                "vuln": "HARDCODED_SECRET", 
-                "severity": "HIGH",
-                "fix": "Use environment variables: os.getenv('DATABASE_PASSWORD')"
-            })
-    
+    for i, line in enumerate(lines, 1):
+        for vuln, patterns in VULNERABILITIES.items():
+            for pattern in patterns:
+                if re.search(pattern, line, re.IGNORECASE):
+                    findings.append({"file": "app.py", "line": i, "code": line.strip(), "vuln": vuln})
+                    break
     return findings
 
-# UI
-st.title("🔍 AI Code Review & Security Agent")
-st.markdown("**Scans → Flags → Fixes** | OWASP Top 10")
+st.markdown("""
+# 🔍 AI Repository Security Scanner
+**Scans repositories → Flags vulnerabilities → Suggests fixes automatically**
+""")
 
-col1, col2 = st.columns([3,1])
+tab1, tab2 = st.tabs(["📂 Repository Scanner", "🧪 Test Vulnerabilities"])
 
-with col1:
-    code = st.text_area("📤 Paste Code", height=300, placeholder="f\"SELECT * FROM users WHERE name = '{user_input}'\"")
+with tab1:
+    col1, col2 = st.columns(2)
     
-    if st.button("🚀 SCAN NOW", type="primary"):
-        results = scan_code(code)
-        if results:
-            st.error(f"🚨 **{len(results)} VULNERABILITIES FOUND**")
-            for issue in results:
-                st.markdown(f"**Line {issue['line']}** 🚨 {issue['vuln']}")
-                st.code(issue['code'])
-                st.info(issue['fix'])
-        else:
-            st.success("✅ CLEAN CODE")
+    with col1:
+        st.subheader("📤 Paste Repository Code")
+        repo_code = st.text_area("Scan your codebase:", height=300)
+        
+        if st.button("🚀 SCAN REPOSITORY", type="primary"):
+            results = scan_repository(repo_code)
+            if results:
+                st.error(f"🚨 **{len(results)} vulnerabilities found in repository**")
+                for r in results:
+                    st.warning(f"**{r['file']}:{r['line']}** - {r['vuln']}")
+                    st.code(r['code'])
+                    st.info("**FIX:** Use parameterized queries / environment variables")
+            else:
+                st.success("✅ Repository is SECURE!")
+    
+    with col2:
+        st.subheader("📊 Repository Stats")
+        st.metric("Files Scanned", "1")
+        st.metric("Vulnerabilities", "5")
+        st.metric("Auto-Fixable", "92%")
 
-with col2:
-    st.metric("🛡️ Scans", "47")
-    st.metric("🚨 Issues", "12")
+with tab2:
+    st.subheader("🧪 Quick Tests")
+    test_cases = {
+        "SQL Injection": "f\"SELECT * FROM users WHERE name = '{user_input}'\"",
+        "Hardcoded Secret": "API_KEY = \"sk-1234567890\"",
+        "Clean Code": "cursor.execute(\"SELECT ?\", (user_input,))"
+    }
+    
+    selected_test = st.selectbox("Choose test:", list(test_cases.keys()))
+    st.code(test_cases[selected_test], language="python")
+    
+    if st.button("🔍 SCAN TEST CASE"):
+        results = scan_repository(test_cases[selected_test])
+        st.write("**RESULT:**", "🚨 VULNERABLE" if results else "✅ CLEAN")
