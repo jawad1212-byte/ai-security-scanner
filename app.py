@@ -1,7 +1,6 @@
 import streamlit as st
 import re
 
-# Initialize session state for LIVE metrics
 if "total_scans" not in st.session_state:
     st.session_state.total_scans = 0
 if "total_issues" not in st.session_state:
@@ -11,7 +10,6 @@ if "success_rate" not in st.session_state:
 
 st.set_page_config(layout="wide", page_title="AI Code Security Scanner")
 
-# PERFECT PATTERN LIBRARY (unchanged - already working perfectly)
 VULN_PATTERNS = {
     "SQL_INJECTION": {
         "severity": "🔴 CRITICAL",
@@ -89,14 +87,12 @@ def perfect_scan(code):
                     continue
     return findings
 
-# LIVE COUNTER LOGIC
 def update_metrics(current_issues):
     st.session_state.total_scans += 1
     st.session_state.total_issues += current_issues
     if st.session_state.total_scans > 0:
         st.session_state.success_rate = ((st.session_state.total_scans - st.session_state.total_issues) / st.session_state.total_scans) * 100
 
-# ENTERPRISE UI WITH LIVE METRICS
 st.markdown("""
 <style>
 .stApp { background: linear-gradient(135deg, #1e1b4b 0%, #0f0f23 100%) }
@@ -127,7 +123,7 @@ print(f"Welcome {username}")"""
     if st.button("🚀 **PERFECT SCAN**", type="primary", use_container_width=True):
         if code_input.strip():
             results = perfect_scan(code_input)
-            update_metrics(len(results))  # UPDATE LIVE COUNTERS
+            update_metrics(len(results))  
             
             if results:
                 st.error(f"🚨 **{len(results)} VULNERABILITIES DETECTED**")
