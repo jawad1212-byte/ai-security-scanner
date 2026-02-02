@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-//conditions
+
 if "total_scans" not in st.session_state:
     st.session_state.total_scans = 0
 if "total_issues" not in st.session_state:
