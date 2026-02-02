@@ -109,7 +109,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("# 🔍 **AI PERFECT SECURITY SCANNER**")
-st.markdown("**Scans → Detects → Fixes** | **OWASP Top 10 Coverage**")
+st.markdown("**Scans → Detects → Fixes**")
 
 col1, col2 = st.columns([3, 1])
 
@@ -151,6 +151,6 @@ st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #94a3b8'>
     <h3>✨ **Production-Grade Security**</h3>
-    <p>• OWASP Top 10 Coverage • Real-time Detection • Live Metrics</p>
+    <p>• • Real-time Detection • Live Metrics</p>
 </div>
 """, unsafe_allow_html=True)
